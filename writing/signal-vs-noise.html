@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Separating Signal from Noise in Financial News — Anup Roy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#faf7f0;
+    --bg-card:#fffdf8;
+    --ink:#1c1a17;
+    --ink-soft:#4a463f;
+    --ink-faint:#888178;
+    --line:#e6e0d4;
+    --line-strong:#d8d1c2;
+    --accent:#b8862f;
+    --accent-deep:#8a6420;
+    --accent-wash:#f3ead6;
+    --red:#b54534;
+    --green:#3f7d4e;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Newsreader',Georgia,serif;
+    font-size:20px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 15% 12%,rgba(184,134,47,0.05),transparent 38%),radial-gradient(circle at 88% 88%,rgba(184,134,47,0.04),transparent 42%);
+  }
+
+  /* ---- top bar ---- */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:saturate(160%) blur(10px);
+    background:rgba(250,247,240,0.82);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:1080px;margin:0 auto;padding:16px 32px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{
+    font-family:'Fraunces',serif;font-weight:600;font-size:19px;
+    letter-spacing:.02em;color:var(--ink);text-decoration:none;
+    display:flex;align-items:center;gap:10px;
+  }
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);display:inline-block;}
+  .nav{display:flex;gap:30px;font-family:'Fraunces',serif;font-size:15px;}
+  .nav a{color:var(--ink-soft);text-decoration:none;letter-spacing:.06em;text-transform:uppercase;font-weight:500;transition:color .2s;}
+  .nav a:hover{color:var(--accent-deep);}
+
+  /* ---- layout ---- */
+  .wrap{max-width:720px;margin:0 auto;padding:0 32px;}
+  .back{
+    display:inline-block;margin:56px 0 0;font-family:'Fraunces',serif;
+    font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-faint);text-decoration:none;transition:color .2s;
+  }
+  .back:hover{color:var(--accent-deep);}
+
+  /* ---- header ---- */
+  header.post{margin:30px 0 48px;}
+  .meta-row{
+    display:flex;align-items:center;gap:14px;
+    font-family:var(--mono);font-size:13px;color:var(--ink-faint);
+    letter-spacing:.03em;margin-bottom:22px;
+  }
+  .meta-row .pill{
+    background:var(--accent-wash);color:var(--accent-deep);
+    padding:3px 11px;border-radius:100px;font-weight:500;
+    letter-spacing:.05em;text-transform:uppercase;font-size:11px;
+  }
+  h1.title{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:clamp(38px,6vw,60px);line-height:1.04;
+    letter-spacing:-0.02em;margin-bottom:28px;
+  }
+  .author{
+    display:flex;align-items:center;gap:14px;
+    padding-top:22px;border-top:1px solid var(--line);
+  }
+  .avatar{
+    width:46px;height:46px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent) 0%,var(--accent-deep) 100%);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:18px;
+    box-shadow:0 4px 14px rgba(138,100,32,0.28);
+  }
+  .author .who{line-height:1.3;}
+  .author .name{font-family:'Fraunces',serif;font-weight:600;font-size:17px;}
+  .author .role{font-size:14px;color:var(--ink-faint);font-style:italic;}
+
+  /* ---- prose ---- */
+  article{padding-bottom:80px;}
+  article p{margin:0 0 24px;color:var(--ink-soft);}
+  article p.lead{font-size:23px;color:var(--ink);line-height:1.55;}
+  article h2{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:32px;letter-spacing:-0.01em;line-height:1.15;
+    margin:64px 0 6px;color:var(--ink);
+  }
+  article h2 .kicker{
+    display:block;font-family:var(--mono);font-size:13px;font-weight:500;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+    margin-bottom:10px;
+  }
+  article h3{
+    font-family:'Fraunces',serif;font-weight:600;font-style:italic;
+    font-size:23px;margin:42px 0 12px;color:var(--ink);
+  }
+  article strong{color:var(--ink);font-weight:600;}
+  article em{font-style:italic;}
+  a.inline{color:var(--accent-deep);text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px;}
+
+  .divider{
+    width:100%;height:1px;background:var(--line);
+    margin:56px 0;border:none;
+    position:relative;
+  }
+  .divider::after{
+    content:"§";position:absolute;left:50%;top:50%;
+    transform:translate(-50%,-50%);background:var(--bg);
+    padding:0 16px;color:var(--ink-faint);font-family:'Fraunces',serif;
+  }
+
+  /* ---- formula block ---- */
+  .formula{
+    background:var(--bg-card);border:1px solid var(--line-strong);
+    border-left:3px solid var(--accent);border-radius:8px;
+    padding:22px 26px;margin:28px 0;font-family:var(--mono);
+    font-size:17px;color:var(--ink);text-align:center;line-height:1.6;
+    box-shadow:0 1px 0 rgba(0,0,0,0.02);
+  }
+  .formula .big{font-size:21px;color:var(--accent-deep);font-weight:500;}
+
+  pre{
+    background:#2a2722;color:#e8e2d4;border-radius:10px;
+    padding:22px 24px;margin:28px 0;overflow-x:auto;
+    font-family:var(--mono);font-size:14px;line-height:1.7;
+  }
+  pre .c{color:var(--accent);}
+  code.k{font-family:var(--mono);font-size:0.86em;background:var(--accent-wash);
+    color:var(--accent-deep);padding:2px 7px;border-radius:5px;}
+
+  /* ---- tables ---- */
+  .tbl-wrap{margin:30px 0;overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
+  table{width:100%;border-collapse:collapse;font-size:15.5px;background:var(--bg-card);}
+  thead th{
+    background:var(--accent-wash);font-family:'Fraunces',serif;font-weight:600;
+    text-align:left;padding:13px 18px;color:var(--accent-deep);
+    font-size:13px;letter-spacing:.05em;text-transform:uppercase;
+    border-bottom:1px solid var(--line-strong);
+  }
+  tbody td{padding:12px 18px;border-bottom:1px solid var(--line);color:var(--ink-soft);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:rgba(184,134,47,0.04);}
+  td .mono,th .mono{font-family:var(--mono);font-size:14px;}
+  .v-noise{color:var(--ink-faint);font-style:italic;}
+  .v-signal{color:var(--accent-deep);font-weight:600;}
+  .v-strong{color:var(--red);font-weight:600;}
+
+  /* ---- callout ---- */
+  .callout{
+    background:var(--bg-card);border:1px solid var(--line-strong);
+    border-radius:12px;padding:26px 28px;margin:34px 0;
+    box-shadow:0 6px 24px rgba(28,26,23,0.04);
+  }
+  .callout .q{
+    font-family:'Fraunces',serif;font-style:italic;font-size:22px;
+    color:var(--ink);line-height:1.4;
+  }
+  blockquote{
+    margin:30px 0;padding:6px 0 6px 26px;border-left:3px solid var(--accent);
+    font-family:'Fraunces',serif;font-style:italic;font-size:20px;
+    color:var(--ink);line-height:1.55;
+  }
+  blockquote .src{display:block;font-size:14px;font-style:normal;font-family:var(--mono);color:var(--ink-faint);margin-top:14px;letter-spacing:.02em;}
+
+  /* ---- the road model ---- */
+  .road{
+    font-family:var(--mono);font-size:13px;background:var(--bg-card);
+    border:1px solid var(--line);border-radius:10px;padding:24px;
+    margin:28px 0;text-align:center;color:var(--ink-soft);line-height:2;
+    overflow-x:auto;white-space:pre;
+  }
+
+  /* ---- bell curve figure ---- */
+  figure{margin:38px 0;}
+  figure svg{width:100%;height:auto;display:block;
+    background:var(--bg-card);border:1px solid var(--line);border-radius:12px;}
+  figcaption{font-size:14px;color:var(--ink-faint);text-align:center;
+    margin-top:12px;font-style:italic;}
+
+  /* ---- footer ---- */
+  footer{
+    border-top:1px solid var(--line);background:var(--bg-card);
+    padding:48px 32px;margin-top:40px;
+  }
+  .foot-inner{max-width:720px;margin:0 auto;}
+  .foot-note{
+    font-size:14px;color:var(--ink-faint);line-height:1.6;font-style:italic;
+    background:var(--bg);border:1px solid var(--line);border-radius:10px;
+    padding:20px 24px;
+  }
+  .foot-credit{
+    margin-top:30px;display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;gap:16px;font-family:'Fraunces',serif;
+  }
+  .foot-credit .name{font-weight:600;font-size:16px;}
+  .foot-credit .links{display:flex;gap:22px;font-size:14px;}
+  .foot-credit a{color:var(--ink-soft);text-decoration:none;letter-spacing:.04em;}
+  .foot-credit a:hover{color:var(--accent-deep);}
+
+  @media(max-width:640px){
+    body{font-size:18px;}
+    .nav{display:none;}
+    .wrap,.topbar-inner{padding-left:22px;padding-right:22px;}
+    article p.lead{font-size:20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/"><span class="dot"></span>Anup Roy</a>
+    <nav class="nav">
+      <a href="https://github.com/anup00900" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.linkedin.com/in/anup0805/" target="_blank" rel="noopener">LinkedIn</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+  <a class="back" href="/">← Back to Writing</a>
+
+  <header class="post">
+    <div class="meta-row">
+      <span class="pill">Quant · Markets</span>
+      <span>June 7, 2026</span>
+      <span>•</span>
+      <span>20 min read</span>
+    </div>
+    <h1 class="title">Separating Signal from Noise in Financial News</h1>
+    <div class="author">
+      <div class="avatar">AR</div>
+      <div class="who">
+        <div class="name">Anup Roy</div>
+        <div class="role">Applied Scientist, Inception AI · Abu Dhabi</div>
+      </div>
+    </div>
+  </header>
+
+  <article>
+    <p class="lead">On April 9, 2025, gold jumped 2.97% in a single day. Trump had announced sweeping tariffs. Every outlet ran it as breaking news. The next day, gold surged another 3.23% when he announced a 90-day pause. Both moves were genuinely rare — that magnitude happens less than once a month.</p>
+
+    <p>Three days earlier, on April 6, gold had moved 0.3%. A headline still ran: <em>"Gold edges higher on geopolitical uncertainty."</em> That move happens on two out of every three trading days. It was noise dressed as signal.</p>
+
+    <p>How different are these two cases, really? The first describes an event where less than 2% of trading days produce a move that large. The second describes something more common than a coin flip. One is worth understanding. The other exists because a journalist needed to file copy.</p>
+
+    <p>This distinction — whether a market move is statistically meaningful or just random fluctuation — is something you can determine with a single division, once you understand the framework behind it. This post builds that framework from scratch: what it means for a move to be "large," how to measure it, and where the method breaks down.</p>
+
+    <h2><span class="kicker">The Problem</span>A price on its own tells you nothing</h2>
+    <p>Gold closed at $2,658 on January 2, 2025. Was that a good day or a bad day? Was the move large or small? Was it driven by news, or was it random drift?</p>
+    <p>You can't answer any of these questions from the price alone. A price is a point with no context. What matters is not <em>where</em> a price is — it's <em>how much it moved</em>, and whether that move was large or small relative to what normally happens.</p>
+    <p>Financial news writes headlines about prices every day. "Gold closes at $3,200." "Nifty at 24,500." These numbers feel meaningful. They aren't.</p>
+
+    <h3>The question that actually matters</h3>
+    <div class="callout">
+      <div class="q">Given how this asset normally behaves, was today's move routine or unusual?</div>
+    </div>
+    <p>Two parts. First: what is the typical daily volatility for this asset? Second: how does today's move compare to that baseline?</p>
+    <p>Edward Thorp — mathematician, hedge fund manager, author of <em>Beat the Dealer</em> and <em>A Man for All Markets</em> — could answer this in his head in seconds. He'd hear a commentator predict the Dow would fall 9 points and know instantly: noise. We'll work through his exact reasoning later. First, the building blocks.</p>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">The Shape of Normal</span>Daily returns — the universal language</h2>
+    <p>Stop thinking in prices. Think in percentage changes.</p>
+    <div class="formula"><span class="big">return = (today − yesterday) ÷ yesterday × 100</span></div>
+    <p>A 1% move means the same thing whether gold is at $1,000 or $3,000. Percentages are comparable across assets, across time, across price levels. Raw prices aren't. For 2025 gold, the first few returns:</p>
+
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Day</th><th>Calculation</th><th>Return</th></tr></thead>
+      <tbody>
+        <tr><td>Jan 2 → Jan 3</td><td class="mono">(2,645 − 2,658.90) ÷ 2,658.90</td><td class="mono">−0.52%</td></tr>
+        <tr><td>Jan 3 → Jan 6</td><td class="mono">(2,638.40 − 2,645) ÷ 2,645</td><td class="mono">−0.25%</td></tr>
+        <tr><td>Jan 6 → Jan 7</td><td class="mono">(2,656.70 − 2,638.40) ÷ 2,638.40</td><td class="mono">+0.69%</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>You now have 251 such numbers for 2025 — one for each trading day. The question becomes: given this collection, what counts as "normal" and what counts as "unusual"?</p>
+
+    <h3>Why the bell curve</h3>
+    <p>Take those 251 returns, sort them into buckets, and count how many fall in each. The tallest bars cluster near zero. The distribution falls away symmetrically on both sides. It looks like a bell.</p>
+    <p>This isn't an assumption we impose. It's a pattern that emerges. Each daily return is the net result of dozens of independent forces — dollar moves, fund flows, central bank commentary, options expiries, geopolitical news. When many independent forces combine, the Central Limit Theorem says the result tends toward a bell shape. The bell isn't a theory we apply to gold. It's a <strong>consequence</strong> of how markets work.</p>
+
+    <h3>Standard deviation — the step size</h3>
+    <p>Every asset has its own bell. Some are wide (volatile), some are narrow (stable). One number determines the width: the standard deviation, written <strong>σ (sigma)</strong>.</p>
+    <p>σ answers the question: what is the typical daily move for this asset? For 2025 gold, σ = 1.29%. For crude oil, σ = 1.98%. For S&amp;P 500, σ = 1.18%. For the Nifty 50, σ = 0.75%.</p>
+    <pre><span class="c"># Computing σ from data</span>
+1. Mean of all returns      → gold 2025: +0.20%/day
+2. Subtract mean from each return
+3. Square each deviation
+4. Average them             → variance = 1.666
+5. Square root              → σ = √1.666 = <span class="c">1.29%</span></pre>
+    <p>σ is the step size on the bell curve's x-axis. One step on gold's curve = 1.29%. Two steps = 2.58%. This "step" is the natural unit for measuring how far a move is from the center.</p>
+
+    <figure>
+      <svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bell curve with 68-95-99.7 sigma zones for gold 2025">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#b8862f" stop-opacity="0.32"/>
+            <stop offset="100%" stop-color="#b8862f" stop-opacity="0.04"/>
+          </linearGradient>
+          <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8a6420" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="#8a6420" stop-opacity="0.1"/>
+          </linearGradient>
+        </defs>
+        <!-- area fills -->
+        <path d="M60,300 C160,300 200,60 360,60 C520,60 560,300 660,300 Z" fill="url(#g1)"/>
+        <path d="M205,300 C260,300 300,75 360,75 C420,75 460,300 515,300 Z" fill="url(#g2)"/>
+        <!-- curve -->
+        <path d="M60,300 C160,300 200,60 360,60 C520,60 560,300 660,300" fill="none" stroke="#8a6420" stroke-width="2.5"/>
+        <!-- baseline -->
+        <line x1="48" y1="300" x2="672" y2="300" stroke="#d8d1c2" stroke-width="1.5"/>
+        <!-- sigma ticks -->
+        <g font-family="'JetBrains Mono',monospace" font-size="12" fill="#888178" text-anchor="middle">
+          <line x1="60" y1="300" x2="60" y2="308" stroke="#d8d1c2"/><text x="60" y="326">−3σ</text><text x="60" y="342" fill="#b8b2a6">−3.87%</text>
+          <line x1="160" y1="300" x2="160" y2="308" stroke="#d8d1c2"/><text x="160" y="326">−2σ</text><text x="160" y="342" fill="#b8b2a6">−2.58%</text>
+          <line x1="260" y1="300" x2="260" y2="308" stroke="#d8d1c2"/><text x="260" y="326">−1σ</text><text x="260" y="342" fill="#b8b2a6">−1.29%</text>
+          <line x1="360" y1="300" x2="360" y2="312" stroke="#b8862f" stroke-width="1.5"/><text x="360" y="326" fill="#8a6420">0</text>
+          <line x1="460" y1="300" x2="460" y2="308" stroke="#d8d1c2"/><text x="460" y="326">+1σ</text><text x="460" y="342" fill="#b8b2a6">+1.29%</text>
+          <line x1="560" y1="300" x2="560" y2="308" stroke="#d8d1c2"/><text x="560" y="326">+2σ</text><text x="560" y="342" fill="#b8b2a6">+2.58%</text>
+          <line x1="660" y1="300" x2="660" y2="308" stroke="#d8d1c2"/><text x="660" y="326">+3σ</text><text x="660" y="342" fill="#b8b2a6">+3.87%</text>
+        </g>
+        <!-- band labels -->
+        <text x="360" y="160" text-anchor="middle" font-family="Fraunces,serif" font-size="20" font-weight="600" fill="#8a6420">68%</text>
+        <text x="360" y="240" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="#4a463f">within ±1σ</text>
+        <text x="200" y="285" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" fill="#888178">95% within ±2σ</text>
+      </svg>
+      <figcaption>The bell curve with 68–95–99.7 sigma zones for gold, 2025. One step = σ = 1.29%.</figcaption>
+    </figure>
+
+    <h3>The 68–95–99.7 rule</h3>
+    <p>The bell's fixed shape gives you three numbers worth knowing: <strong>68%</strong> of days fall within ±1σ (gold moves less than ±1.29%). <strong>95%</strong> fall within ±2σ (only 5% exceed ±2.58%). <strong>99.7%</strong> fall within ±3σ (beyond ±3.87% is less than 1 in 300 days). Verified against real 2025 gold data:</p>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Band</th><th>Expected</th><th>Actual (251 days)</th></tr></thead>
+      <tbody>
+        <tr><td>Within ±1σ</td><td class="mono">68.3%</td><td class="mono">74.9%</td></tr>
+        <tr><td>Within ±2σ</td><td class="mono">95.4%</td><td class="mono">94.0%</td></tr>
+        <tr><td>Within ±3σ</td><td class="mono">99.7%</td><td class="mono">99.2%</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>Close enough. The slight excess in ±1σ and deficit in ±3σ reflects fatter tails in real financial data — a known property. For filtering headlines, the approximation holds.</p>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">The Ruler</span>Z-score — the x-axis, relabeled</h2>
+    <p>Look at the bell curve's x-axis. The tick marks at −3, −2, −1, 0, +1, +2, +3 — those <em>are</em> z-scores. The z-score is simply your position on the bell curve, expressed in units of σ. <code class="k">z = 1</code> means you're standing at the +1σ mark. That's all it is.</p>
+    <div class="formula"><span class="big">z = move ÷ σ</span></div>
+    <p>This is a unit conversion. The move is in %. The bell curve's x-axis is in σ-units. Division by σ converts your move into "number of steps from the center." A 1.9% move in crude oil (σ = 1.98%) is z = 0.96 — about one step, marginal. The same 1.9% move in gold (σ = 1.29%) is z = 1.47 — one and a half steps. Same absolute move, different meaning.</p>
+
+    <h3>The mental model</h3>
+    <p>A flat road. You stand at center (z = 0). The ground is marked at regular intervals. Each interval is one σ-step.</p>
+    <div class="road">←  −3σ      −2σ      −1σ     [YOU]     +1σ      +2σ      +3σ  →
+  −3.87%   −2.58%   −1.29%      0     +1.29%   +2.58%   +3.87%
+
+          one step = σ = 1.29%  (gold 2025)</div>
+    <p>A headline says gold moved +0.4%. You compute z = 0.4 ÷ 1.29 = 0.31. Less than a third of one step — you barely shuffled off the origin. A headline says gold moved +2.58%. z = 2.0. Two full steps from center — the boundary of what 95% of days produce.</p>
+
+    <h3>Area = probability (and we want the outside)</h3>
+    <p>The bell curve's total area = 100%. The question we're asking is NOT "what fraction of days land inside my position?" We want the opposite: <strong>"what fraction of days produce a move AT LEAST as large as mine?"</strong> That's the area <em>outside</em> — the two tails beyond your position.</p>
+    <p>Why two tails? Because direction doesn't matter for this kind of filtering. A −2% drop is as statistically notable as a +2% gain. That combined outside area is the probability we care about.</p>
+
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>z</th><th>Outside area</th><th>Meaning</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">0.0</td><td class="mono">100%</td><td>Every day moves at least this much</td><td class="v-noise">—</td></tr>
+        <tr><td class="mono">0.5</td><td class="mono">62%</td><td>3 of 5 days are bigger</td><td class="v-noise">Noise</td></tr>
+        <tr><td class="mono">1.0</td><td class="mono">32%</td><td>1 in 3 days are bigger</td><td class="v-noise">Marginal</td></tr>
+        <tr><td class="mono">1.5</td><td class="mono">13%</td><td>1 in 8 days are bigger</td><td class="v-signal">Signal</td></tr>
+        <tr><td class="mono">2.0</td><td class="mono">4.6%</td><td>1 in 22 days are bigger</td><td class="v-signal">Strong</td></tr>
+        <tr><td class="mono">2.5</td><td class="mono">1.2%</td><td>1 in 80 days are bigger</td><td class="v-strong">Major</td></tr>
+        <tr><td class="mono">3.0</td><td class="mono">0.27%</td><td>1 in 370 days are bigger</td><td class="v-strong">Extreme</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>If 62% of random days produce a bigger move than yours (z = 0.5), your move is unremarkable. If only 1.2% of days produce a bigger move (z = 2.5), something genuinely unusual happened.</p>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">The Filter in Practice</span>Headline to verdict</h2>
+    <pre><span class="c">Step 1</span>  Extract the move    "Gold surges 2.1% on Fed pivot fears" → 2.1%
+<span class="c">Step 2</span>  Recall σ            Gold σ = 1.29%
+<span class="c">Step 3</span>  Compute z           z = 2.1 ÷ 1.29 = 1.63
+<span class="c">Step 4</span>  Locate on table     between 1.5 (1 in 8) and 2.0 (1 in 22)
+<span class="c">Step 5</span>  Classify            z > 1.5 → Signal. Worth reading.</pre>
+    <p>Once σ is memorized, the only real-time work is a single division. The rest is a table lookup.</p>
+
+    <h3>Quick reference for gold (2025)</h3>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Threshold</th><th>Move</th><th>z</th><th>What to do</th></tr></thead>
+      <tbody>
+        <tr><td class="v-noise">Ignore</td><td class="mono">&lt; 0.65%</td><td class="mono">&lt; 0.5</td><td>Skip the headline entirely</td></tr>
+        <tr><td class="v-signal">Notice</td><td class="mono">&gt; 1.94%</td><td class="mono">&gt; 1.5</td><td>Something real may have happened — read further</td></tr>
+        <tr><td class="v-strong">Alarm</td><td class="mono">&gt; 3.23%</td><td class="mono">&gt; 2.5</td><td>Something definitely happened — go find out what</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>Thorp's DJIA — the original insight</h3>
+    <blockquote>
+      I heard the reporter say, "The Dow Jones Industrial Average is down 9 points to 11,075 on fears of a further interest rate rise." I mentally estimated a typical daily DJIA change at about 0.6 percent or about sixty-six points. The reported move of 9 points was less than a seventh of this… so the market action was very quiet and hardly indicative of any fearful response. Simple math allowed me to separate hype from reality.
+      <span class="src">— Edward Thorp, A Man for All Markets</span>
+    </blockquote>
+    <p>Walk through it: move = 9 points; σ = 0.6% × 11,000 = 66 points; z = 9 ÷ 66 = 0.14. On 89% of ordinary days the market moves more than this. <strong>Verdict: noise.</strong> The reporter attributed causation ("on fears of…") to a move so small it required no explanation at all.</p>
+
+    <h3>2025 gold — real events, real z-scores</h3>
+    <p>Gold went from $2,658 to $4,325 in 2025 — up 63%. The major moves clustered around three macro events: the Trump tariff shock, the US–China trade ceasefire, and the October record run. The big days (z &gt; 2.5):</p>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Move</th><th>z</th><th>What happened</th></tr></thead>
+      <tbody>
+        <tr><td>Oct 21</td><td class="mono">−5.74%</td><td class="mono">4.44</td><td>Steepest single-day gold drop in over a decade. Nine-week rally ended.</td></tr>
+        <tr><td>Dec 29</td><td class="mono">−4.50%</td><td class="mono">3.49</td><td>Year-end profit-locking. Gold up 63% for 2025.</td></tr>
+        <tr><td>Apr 23</td><td class="mono">−3.66%</td><td class="mono">2.84</td><td>Reversal after three weeks of tariff-driven gains.</td></tr>
+        <tr><td>Oct 20</td><td class="mono">+3.50%</td><td class="mono">2.71</td><td>Gold broke $4,000 for the first time. Geopolitical tension + central bank buying.</td></tr>
+        <tr><td>May 12</td><td class="mono">−3.46%</td><td class="mono">2.68</td><td>US–China 90-day tariff ceasefire. Safe-haven demand collapsed.</td></tr>
+        <tr><td>Apr 10</td><td class="mono">+3.23%</td><td class="mono">2.50</td><td>Trump announced 90-day tariff pause — new record on safe-haven inflows.</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>The noise days tell the other half of the story: Sep 10 (+0.008%, z = 0.006), Jul 7 (−0.009%, z = 0.007), Nov 6 (−0.010%, z = 0.008). Financial news wrote stories on all three. <em>"Gold edges higher as dollar softens."</em> These moves are so deep inside the first σ-step that they are indistinguishable from random drift. The pattern: every z &gt; 2.5 day had a real, identifiable macro event behind it. Every z &lt; 0.3 day had nothing behind it except a word count requirement.</p>
+
+    <h3>Across assets — same framework, different σ</h3>
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Asset</th><th>σ (2025)</th><th>"Ignore" &lt;</th><th>"Alarm" &gt;</th></tr></thead>
+      <tbody>
+        <tr><td>Gold</td><td class="mono">1.29%</td><td class="mono">0.65%</td><td class="mono">3.23%</td></tr>
+        <tr><td>Crude Oil</td><td class="mono">1.98%</td><td class="mono">0.99%</td><td class="mono">4.94%</td></tr>
+        <tr><td>S&amp;P 500</td><td class="mono">1.18%</td><td class="mono">0.59%</td><td class="mono">2.96%</td></tr>
+        <tr><td>Nifty 50</td><td class="mono">0.75%</td><td class="mono">0.37%</td><td class="mono">1.87%</td></tr>
+        <tr><td>Natural Gas</td><td class="mono">4.49%</td><td class="mono">2.25%</td><td class="mono">11.2%</td></tr>
+        <tr><td>Silver</td><td class="mono">2.36%</td><td class="mono">1.18%</td><td class="mono">5.91%</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>A 2% move in gold (z = 1.55) crosses the signal threshold. The same 2% move in crude oil (z = 1.01) is merely marginal. And a 2% move on the Nifty (z = 2.67) is a major event — fewer than once every 80 trading days. Same percentage. Completely different statistical meaning. <strong>The σ-context is everything.</strong></p>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">The Limits</span>Where the method breaks down</h2>
+    <p>The z-score filter is useful precisely because it's simple. But simplicity comes with boundaries. Three things worth being explicit about.</p>
+
+    <h3>It tells you significance, not direction</h3>
+    <p>A z &gt; 2 move means something real drove the market. It says nothing about what happens next. May 12, 2025 was z = 2.68 — and gold <em>fell</em> 3.46%. Z is a filter for your information diet. It tells you which headlines to read; it does not tell you what to do once you've read them.</p>
+
+    <h3>Sigma is not a constant — it drifts</h3>
+    <p>This is the most important caveat. The entire framework rests on knowing σ, and σ is not fixed. Gold's σ ranged from 0.65% (2017, calmest year) to 1.35% (2020, COVID shock) over the decade — a 2× variation. It also shifts within a single year: in March 2025 (pre-tariff) the 60-day σ was 0.84%; by June it had nearly doubled to 1.67%. A 1.3% move was a signal in March (z = 1.55) and noise by June (z = 0.78). Crude oil is far worse — its annual σ ranged from 1.58% (2017) to 21.66% (2020, when prices went negative).</p>
+    <p><strong>What to do about it:</strong> for casual filtering, accept the imprecision — at the extremes the framework still works under any plausible σ. For more care, recalibrate σ from the trailing 60–90 days every quarter. When in doubt, use a slightly lower σ; it makes your filter more sensitive, and it's better to read one extra headline than to miss a real event.</p>
+
+    <h3>Fat tails — rare events are less rare than the bell predicts</h3>
+    <p>Real markets have fatter tails than a perfect bell curve. Events the bell assigns near-zero probability to — z &gt; 4, "should" happen once in 30,000 days — actually occur every few years. October 21, 2025 (z = 4.44) is one. This doesn't break the filter: z &gt; 2.5 still means "go look." But don't use z-scores for precise probability estimation. For pricing options or sizing portfolio risk, use a distribution with fatter tails.</p>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">Summary</span>One division, every morning</h2>
+    <p>Memorize σ for the assets you follow. When you see a headline, divide the reported move by σ. The result — z — tells you where the move lands on the bell curve. <strong>Below 0.5: noise, skip it. Above 1.5: signal, read further. Above 2.5: something real happened, understand why.</strong></p>
+    <p>The method has limits. Sigma drifts, so your calibration needs occasional updating. The bell curve underestimates extreme events. And statistical significance tells you nothing about direction or what to trade. But as a filter for the daily flood of financial media — for separating the 10% of headlines that carry real information from the 90% that don't — it works.</p>
+  </article>
+</div>
+
+<footer>
+  <div class="foot-inner">
+    <div class="foot-note">
+      Not investment advice. This is a framework for evaluating information quality — for distinguishing meaningful market moves from routine fluctuation. It is not a trading strategy. All data sourced from Yahoo Finance (GC=F, CL=F, NG=F, SI=F, ^GSPC, ^NSEI) for the 2025 calendar year. Sigma values are period-specific and will change as market conditions evolve.
+    </div>
+    <div class="foot-credit">
+      <span class="name">Anup Roy</span>
+      <span class="links">
+        <a href="https://github.com/anup00900" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/in/anup0805/" target="_blank" rel="noopener">LinkedIn</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
