@@ -198,18 +198,12 @@
   </section>
 
   <section class="writing" id="writing">
-    <div class="section-label">Filter by topic</div>
-    <div class="topics" id="topics">
-      <span class="topic active" data-topic="all">All</span>
-      <span class="topic" data-topic="quant">Quant · Markets</span>
-      <span class="topic" data-topic="ml">Machine Learning</span>
-      <span class="topic" data-topic="systems">Systems</span>
-      <span class="topic" data-topic="notes">Notes</span>
-    </div>
+    <div class="section-label" id="topics-label">Filter by topic</div>
+    <div class="topics" id="topics"></div>
 
     <ul class="posts" id="posts">
 
-      <li class="post-item" data-topic="quant">
+      <li class="post-item" data-topic="quant" data-topic-label="Quant &middot; Markets">
         <a class="post-link" href="writing/signal-vs-noise.html">
           <span class="post-date">Jun 7, 2026</span>
           <div class="post-body">
@@ -243,23 +237,49 @@
 </footer>
 
 <script>
-  const topics = document.querySelectorAll('.topic');
-  const posts = document.querySelectorAll('#posts .post-item');
+  // Auto-derive topic filters from the posts that actually exist.
+  const posts = Array.from(document.querySelectorAll('#posts .post-item'));
+  const topicsBox = document.getElementById('topics');
+  const topicsLabel = document.getElementById('topics-label');
   const empty = document.getElementById('empty');
-  topics.forEach(t => {
-    t.addEventListener('click', () => {
-      topics.forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      const sel = t.dataset.topic;
-      let visible = 0;
-      posts.forEach(p => {
-        const show = sel === 'all' || p.dataset.topic === sel;
-        p.style.display = show ? '' : 'none';
-        if (show) visible++;
-      });
-      empty.classList.toggle('show', visible === 0);
-    });
+
+  const seen = new Map();
+  posts.forEach(p => {
+    const slug = p.dataset.topic;
+    if (slug && !seen.has(slug)) seen.set(slug, p.dataset.topicLabel || slug);
   });
+
+  // Only render the filter row when there's more than one topic in play.
+  if (seen.size > 1) {
+    const mkChip = (slug, label, active) => {
+      const el = document.createElement('span');
+      el.className = 'topic' + (active ? ' active' : '');
+      el.dataset.topic = slug;
+      el.innerHTML = label;
+      return el;
+    };
+    topicsBox.appendChild(mkChip('all', 'All', true));
+    seen.forEach((label, slug) => topicsBox.appendChild(mkChip(slug, label, false)));
+
+    topicsBox.querySelectorAll('.topic').forEach(t => {
+      t.addEventListener('click', () => {
+        topicsBox.querySelectorAll('.topic').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        const sel = t.dataset.topic;
+        let visible = 0;
+        posts.forEach(p => {
+          const show = sel === 'all' || p.dataset.topic === sel;
+          p.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+        empty.classList.toggle('show', visible === 0);
+      });
+    });
+  } else {
+    // Single topic (or none) — no filter UI needed.
+    topicsLabel.style.display = 'none';
+    topicsBox.style.display = 'none';
+  }
 </script>
 
 </body>

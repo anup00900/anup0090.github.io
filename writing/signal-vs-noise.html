@@ -59,11 +59,16 @@
   /* ---- layout ---- */
   .wrap{max-width:720px;margin:0 auto;padding:0 32px;}
   .back{
-    display:inline-block;margin:56px 0 0;font-family:'Fraunces',serif;
+    display:inline-flex;align-items:center;gap:6px;
+    margin:56px 0 0;font-family:'Fraunces',serif;
     font-size:14px;letter-spacing:.06em;text-transform:uppercase;
-    color:var(--ink-faint);text-decoration:none;transition:color .2s;
+    color:var(--accent-deep);text-decoration:none;cursor:pointer;
+    border-bottom:1px solid var(--line-strong);padding-bottom:3px;
+    transition:color .2s,border-color .2s,transform .2s;
   }
-  .back:hover{color:var(--accent-deep);}
+  .back:hover{color:var(--accent);border-color:var(--accent);transform:translateX(-3px);}
+  .back .arrow{display:inline-block;transition:transform .2s;}
+  .back:hover .arrow{transform:translateX(-2px);}
 
   /* ---- header ---- */
   header.post{margin:30px 0 48px;}
@@ -239,7 +244,7 @@
 </div>
 
 <div class="wrap">
-  <a class="back" href="../">← Back to Writing</a>
+  <a class="back" href="../"><span class="arrow">←</span> Back to Writing</a>
 
   <header class="post">
     <div class="meta-row">
