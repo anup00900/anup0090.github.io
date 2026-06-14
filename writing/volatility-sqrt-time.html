@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why Volatility Grows by &radic;t &mdash; Anup Roy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#faf7f0;
+    --bg-card:#fffdf8;
+    --ink:#1c1a17;
+    --ink-soft:#4a463f;
+    --ink-faint:#888178;
+    --line:#e6e0d4;
+    --line-strong:#d8d1c2;
+    --accent:#b8862f;
+    --accent-deep:#8a6420;
+    --accent-wash:#f3ead6;
+    --red:#b54534;
+    --green:#3f7d4e;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Newsreader',Georgia,serif;
+    font-size:20px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 15% 12%,rgba(184,134,47,0.05),transparent 38%),radial-gradient(circle at 88% 88%,rgba(184,134,47,0.04),transparent 42%);
+  }
+
+  /* ---- top bar ---- */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:saturate(160%) blur(10px);
+    background:rgba(250,247,240,0.82);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:1080px;margin:0 auto;padding:16px 32px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{
+    font-family:'Fraunces',serif;font-weight:600;font-size:19px;
+    letter-spacing:.02em;color:var(--ink);text-decoration:none;
+    display:flex;align-items:center;gap:10px;
+  }
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);display:inline-block;}
+  .nav{display:flex;gap:30px;font-family:'Fraunces',serif;font-size:15px;}
+  .nav a{color:var(--ink-soft);text-decoration:none;letter-spacing:.06em;text-transform:uppercase;font-weight:500;transition:color .2s;}
+  .nav a:hover{color:var(--accent-deep);}
+
+  /* ---- layout ---- */
+  .wrap{max-width:720px;margin:0 auto;padding:0 32px;}
+  .back{
+    display:inline-flex;align-items:center;gap:6px;
+    margin:56px 0 0;font-family:'Fraunces',serif;
+    font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--accent-deep);text-decoration:none;cursor:pointer;
+    border-bottom:1px solid var(--line-strong);padding-bottom:3px;
+    transition:color .2s,border-color .2s,transform .2s;
+  }
+  .back:hover{color:var(--accent);border-color:var(--accent);transform:translateX(-3px);}
+  .back .arrow{display:inline-block;transition:transform .2s;}
+  .back:hover .arrow{transform:translateX(-2px);}
+
+  /* ---- header ---- */
+  header.post{margin:30px 0 48px;}
+  .meta-row{
+    display:flex;align-items:center;gap:14px;
+    font-family:var(--mono);font-size:13px;color:var(--ink-faint);
+    letter-spacing:.03em;margin-bottom:22px;
+  }
+  .meta-row .pill{
+    background:var(--accent-wash);color:var(--accent-deep);
+    padding:3px 11px;border-radius:100px;font-weight:500;
+    letter-spacing:.05em;text-transform:uppercase;font-size:11px;
+  }
+  h1.title{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:clamp(38px,6vw,60px);line-height:1.04;
+    letter-spacing:-0.02em;margin-bottom:28px;
+  }
+  .author{
+    display:flex;align-items:center;gap:14px;
+    padding-top:22px;border-top:1px solid var(--line);
+  }
+  .avatar{
+    width:46px;height:46px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent) 0%,var(--accent-deep) 100%);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:18px;
+    box-shadow:0 4px 14px rgba(138,100,32,0.28);
+  }
+  .author .who{line-height:1.3;}
+  .author .name{font-family:'Fraunces',serif;font-weight:600;font-size:17px;}
+  .author .role{font-size:14px;color:var(--ink-faint);font-style:italic;}
+
+  /* ---- prose ---- */
+  article{padding-bottom:80px;}
+  article p{margin:0 0 24px;color:var(--ink-soft);}
+  article p.lead{font-size:23px;color:var(--ink);line-height:1.55;}
+  article h2{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:32px;letter-spacing:-0.01em;line-height:1.15;
+    margin:64px 0 6px;color:var(--ink);
+  }
+  article h2 .kicker{
+    display:block;font-family:var(--mono);font-size:13px;font-weight:500;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+    margin-bottom:10px;
+  }
+  article h3{
+    font-family:'Fraunces',serif;font-weight:600;font-style:italic;
+    font-size:23px;margin:42px 0 12px;color:var(--ink);
+  }
+  article strong{color:var(--ink);font-weight:600;}
+  article em{font-style:italic;}
+  a.inline{color:var(--accent-deep);text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px;}
+
+  .divider{
+    width:100%;height:1px;background:var(--line);
+    margin:56px 0;border:none;
+    position:relative;
+  }
+  .divider::after{
+    content:"\00a7";position:absolute;left:50%;top:50%;
+    transform:translate(-50%,-50%);background:var(--bg);
+    padding:0 16px;color:var(--ink-faint);font-family:'Fraunces',serif;
+  }
+
+  /* ---- formula block ---- */
+  .formula{
+    background:var(--bg-card);border:1px solid var(--line-strong);
+    border-left:3px solid var(--accent);border-radius:8px;
+    padding:22px 26px;margin:28px 0;font-family:var(--mono);
+    font-size:17px;color:var(--ink);text-align:center;line-height:1.6;
+    box-shadow:0 1px 0 rgba(0,0,0,0.02);
+  }
+  .formula .big{font-size:21px;color:var(--accent-deep);font-weight:500;}
+  .formula .note{display:block;font-family:'Newsreader',serif;font-style:italic;
+    font-size:14px;color:var(--ink-faint);margin-top:10px;}
+
+  pre{
+    background:#2a2722;color:#e8e2d4;border-radius:10px;
+    padding:22px 24px;margin:28px 0;overflow-x:auto;
+    font-family:var(--mono);font-size:14px;line-height:1.7;
+  }
+  pre .c{color:var(--accent);}
+  code.k{font-family:var(--mono);font-size:0.86em;background:var(--accent-wash);
+    color:var(--accent-deep);padding:2px 7px;border-radius:5px;}
+
+  /* ---- tables ---- */
+  .tbl-wrap{margin:30px 0;overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
+  table{width:100%;border-collapse:collapse;font-size:15.5px;background:var(--bg-card);}
+  thead th{
+    background:var(--accent-wash);font-family:'Fraunces',serif;font-weight:600;
+    text-align:left;padding:13px 18px;color:var(--accent-deep);
+    font-size:13px;letter-spacing:.05em;text-transform:uppercase;
+    border-bottom:1px solid var(--line-strong);
+  }
+  tbody td{padding:12px 18px;border-bottom:1px solid var(--line);color:var(--ink-soft);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:rgba(184,134,47,0.04);}
+  td .mono,th .mono{font-family:var(--mono);font-size:14px;}
+  .v-noise{color:var(--ink-faint);font-style:italic;}
+  .v-signal{color:var(--accent-deep);font-weight:600;}
+  .v-strong{color:var(--red);font-weight:600;}
+
+  /* ---- callout ---- */
+  .callout{
+    background:var(--bg-card);border:1px solid var(--line-strong);
+    border-radius:12px;padding:26px 28px;margin:34px 0;
+    box-shadow:0 6px 24px rgba(28,26,23,0.04);
+  }
+  .callout .q{
+    font-family:'Fraunces',serif;font-style:italic;font-size:22px;
+    color:var(--ink);line-height:1.4;
+  }
+  blockquote{
+    margin:30px 0;padding:6px 0 6px 26px;border-left:3px solid var(--accent);
+    font-family:'Fraunces',serif;font-style:italic;font-size:20px;
+    color:var(--ink);line-height:1.55;
+  }
+  blockquote .src{display:block;font-size:14px;font-style:normal;font-family:var(--mono);color:var(--ink-faint);margin-top:14px;letter-spacing:.02em;}
+
+  /* ---- figures ---- */
+  figure{margin:38px 0;}
+  figure svg{width:100%;height:auto;display:block;
+    background:var(--bg-card);border:1px solid var(--line);border-radius:12px;}
+  figcaption{font-size:14px;color:var(--ink-faint);text-align:center;
+    margin-top:12px;font-style:italic;}
+
+  /* ---- two-up scale visualization ---- */
+  .ascii-fig{
+    font-family:var(--mono);font-size:13px;background:var(--bg-card);
+    border:1px solid var(--line);border-radius:10px;padding:24px;
+    margin:28px 0;color:var(--ink-soft);line-height:1.85;
+    overflow-x:auto;white-space:pre;
+  }
+
+  /* ---- footer ---- */
+  footer{
+    border-top:1px solid var(--line);background:var(--bg-card);
+    padding:48px 32px;margin-top:40px;
+  }
+  .foot-inner{max-width:720px;margin:0 auto;}
+  .foot-note{
+    font-size:14px;color:var(--ink-faint);line-height:1.6;font-style:italic;
+    background:var(--bg);border:1px solid var(--line);border-radius:10px;
+    padding:20px 24px;
+  }
+  .foot-credit{
+    margin-top:30px;display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;gap:16px;font-family:'Fraunces',serif;
+  }
+  .foot-credit .name{font-weight:600;font-size:16px;}
+  .foot-credit .links{display:flex;gap:22px;font-size:14px;}
+  .foot-credit a{color:var(--ink-soft);text-decoration:none;letter-spacing:.04em;}
+  .foot-credit a:hover{color:var(--accent-deep);}
+
+  @media(max-width:640px){
+    body{font-size:18px;}
+    .nav{display:none;}
+    .wrap,.topbar-inner{padding-left:22px;padding-right:22px;}
+    article p.lead{font-size:20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="../"><span class="dot"></span>Anup Roy</a>
+    <nav class="nav">
+      <a href="https://github.com/anup00900" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.linkedin.com/in/anup0805/" target="_blank" rel="noopener">LinkedIn</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+  <a class="back" href="../"><span class="arrow">&larr;</span> Back to Writing</a>
+
+  <header class="post">
+    <div class="meta-row">
+      <span class="pill">Quant &middot; Markets</span>
+      <span>June 14, 2026</span>
+      <span>&bull;</span>
+      <span>15 min read</span>
+    </div>
+    <h1 class="title">Why volatility grows by &radic;t &mdash; and what standard deviation actually measures.</h1>
+    <div class="author">
+      <div class="avatar">AR</div>
+      <div class="who">
+        <div class="name">Anup Roy</div>
+        <div class="role">Applied Scientist, Inception AI &middot; Abu Dhabi</div>
+      </div>
+    </div>
+  </header>
+
+  <article>
+    <p class="lead">If a stock's daily standard deviation is 1%, what's its standard deviation over a five-day week? The instinct is 5%. The answer is closer to 2.24%. Across a full trading year, it's about 16% &mdash; not 252%. Risk does not pile up the way time does. It piles up by &radic;t.</p>
+
+    <p>This is one of the most-used and most-misquoted rules in finance. It shows up inside Black&ndash;Scholes, inside Value-at-Risk, inside every Sharpe ratio anyone has ever annualized. It is also the source of an enormous amount of confusion &mdash; partly because the same word, <em>volatility</em>, is used to describe two related but distinct things, and partly because the &radic;t rule rests on assumptions people forget they're making.</p>
+
+    <p>This post does three things. First, it pins down the difference between the standard deviation of a sample of returns and "volatility" as a finance practitioner uses the term. Second, it derives the &radic;t scaling from one line of algebra and one strong assumption. Third, it walks through where that assumption breaks &mdash; because the cases where it breaks are the cases that matter most.</p>
+
+    <h2><span class="kicker">The Two Words</span>Standard deviation vs. volatility</h2>
+    <p>In casual conversation, these are synonyms. In careful work, they are not.</p>
+
+    <p><strong>Standard deviation</strong> is a sample statistic. You take a list of numbers &mdash; any list &mdash; subtract the mean from each, square the deviations, average them, take the square root. The answer carries the same units as the input. Daily returns in %? Then &sigma; is in % per day. It is backward-looking. It is a property of the sample you computed it from.</p>
+
+    <p><strong>Volatility</strong>, in finance, is something narrower. It is a parameter, not a statistic &mdash; the quantity that goes into a stochastic model of the asset. By convention it has three properties that distinguish it from a generic standard deviation:</p>
+
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Property</th><th>Standard deviation (general)</th><th>Volatility (finance)</th></tr></thead>
+      <tbody>
+        <tr><td>Computed on</td><td>Any sample</td><td>Log returns of an asset</td></tr>
+        <tr><td>Time scale</td><td>Whatever the sample period is</td><td>Annualized, by convention</td></tr>
+        <tr><td>Direction</td><td>Backward-looking statistic</td><td>Forward-looking parameter of a model</td></tr>
+        <tr><td>Where it appears</td><td>Descriptive statistics</td><td>Black&ndash;Scholes, GBM, VaR, Sharpe</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>Why log returns</h3>
+    <p>If the price of an asset goes from $100 to $110 to $99, the simple returns are +10% and &minus;10%. Add them: zero. But you didn't end where you started &mdash; you ended at $99, down 1%. Simple returns don't add across time. They multiply.</p>
+
+    <p>Log returns fix this. Define <code class="k">r<sub>t</sub> = ln(P<sub>t</sub> / P<sub>t&minus;1</sub>)</code>. Then the total log return over N periods is just the sum of the period log returns:</p>
+
+    <div class="formula">
+      <span class="big">ln(P<sub>N</sub> / P<sub>0</sub>) = r<sub>1</sub> + r<sub>2</sub> + &hellip; + r<sub>N</sub></span>
+      <span class="note">Log returns are additive across time. Simple returns are not.</span>
+    </div>
+
+    <p>This is the small but consequential reason finance prefers log returns whenever scaling matters. Variance of a sum is easy. Variance of a product is not.</p>
+
+    <h3>The convention of annualization</h3>
+    <p>If you compute &sigma; on daily log returns, you get a number with units of "per day." If you compute it on weekly, you get "per week." Two people computing vol on the same asset, on different sampling frequencies, get different numbers &mdash; and neither is wrong. They are just on different time axes.</p>
+
+    <p>To make vols comparable across assets and across estimators, the industry annualizes. Same number, different label. The exchange rate between time scales is the topic of the rest of this post.</p>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">The Derivation</span>Why variances add &mdash; and standard deviations don't</h2>
+    <p>The whole &radic;t rule comes from one fact about variance. Take two random variables <em>X</em> and <em>Y</em>:</p>
+
+    <div class="formula">
+      <span class="big">Var(X + Y) = Var(X) + Var(Y) + 2&middot;Cov(X, Y)</span>
+    </div>
+
+    <p>If <em>X</em> and <em>Y</em> are independent, Cov(X, Y) = 0. The variance of their sum is the sum of their variances. Standard deviations don't have this property &mdash; you can't add square roots. But you can add the things inside them, then take the square root at the end.</p>
+
+    <h3>Apply it to returns</h3>
+    <p>Assume daily log returns <em>r<sub>1</sub>, r<sub>2</sub>, &hellip;, r<sub>N</sub></em> are independent and identically distributed with mean &mu; and variance &sigma;&sup2;. The cumulative log return over N days is:</p>
+
+    <div class="formula"><span class="big">R<sub>N</sub> = r<sub>1</sub> + r<sub>2</sub> + &hellip; + r<sub>N</sub></span></div>
+
+    <p>Then:</p>
+
+    <div class="formula">
+      <span class="big">E[R<sub>N</sub>] = N&middot;&mu;</span><br>
+      <span class="big">Var(R<sub>N</sub>) = N&middot;&sigma;&sup2;</span><br>
+      <span class="big">Std(R<sub>N</sub>) = &sigma;&middot;&radic;N</span>
+      <span class="note">Mean grows linearly with time. Standard deviation grows with the square root of time.</span>
+    </div>
+
+    <p>That's it. That's the whole &radic;t rule. It comes from one assumption (independence) and one identity (variance of a sum). Everything else in this post is either a consequence of it or a way it fails.</p>
+
+    <h3>Why the mean grows faster than the noise</h3>
+    <p>This asymmetry is doing a lot of work in finance. Over time, the expected return drifts at rate N, but the uncertainty grows at rate &radic;N. The signal-to-noise ratio of "is this strategy profitable" therefore grows like N / &radic;N = &radic;N. That's why a small edge becomes statistically detectable only over long horizons, and why short-window Sharpe ratios are so unreliable.</p>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">A Worked Example</span>From daily to annual, on real numbers</h2>
+    <p>From the previous post, gold's 2025 daily standard deviation was &sigma;<sub>d</sub> = 1.29%. Apply the rule to every horizon a practitioner might care about:</p>
+
+    <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Horizon</th><th>Days (N)</th><th>&radic;N</th><th>Vol = &sigma;<sub>d</sub> &middot; &radic;N</th></tr></thead>
+      <tbody>
+        <tr><td>One day</td><td class="mono">1</td><td class="mono">1.00</td><td class="mono">1.29%</td></tr>
+        <tr><td>One week</td><td class="mono">5</td><td class="mono">2.24</td><td class="mono">2.88%</td></tr>
+        <tr><td>One month</td><td class="mono">21</td><td class="mono">4.58</td><td class="mono">5.91%</td></tr>
+        <tr><td>One quarter</td><td class="mono">63</td><td class="mono">7.94</td><td class="mono">10.2%</td></tr>
+        <tr><td>One year</td><td class="mono">252</td><td class="mono">15.87</td><td class="mono">20.5%</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Compare against the alternative: if vol scaled <em>linearly</em> with time, the annual vol would be 1.29% &times; 252 = 325%. The instrument would be unhedgeable, unpricable, and unowned. The &radic;t scaling is what makes risk look modest enough over long horizons that anyone can hold the asset at all.</p>
+
+    <h3>The annualization shortcut</h3>
+    <div class="formula">
+      <span class="big">&sigma;<sub>annual</sub> = &sigma;<sub>daily</sub> &middot; &radic;252</span>
+      <span class="note">Use 252 for equities (trading days), 365 for crypto / FX (calendar days).</span>
+    </div>
+
+    <p>This is the single most-typed formula in every quant codebase. If you ever see <code class="k">np.sqrt(252)</code> in a notebook, this is what it's doing.</p>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">The Intuition</span>Random walks, and why paths cancel</h2>
+    <p>Forget returns for a moment. Imagine a coin. Heads, you step right. Tails, you step left. After N flips, where are you?</p>
+
+    <p>Linear intuition says: "I took N steps, so I should be roughly N units from where I started." This is wrong. Half your steps went left and half went right. They cancel. What's left is the <em>imbalance</em> between heads and tails &mdash; and the typical imbalance in N flips is &radic;N, not N.</p>
+
+    <div class="ascii-fig">
+            after 100 flips
+          ___________________
+   linear |&rarr; expected distance &asymp; 100 |   (wrong)
+   actual |&rarr; expected distance &asymp; 10   |   = &radic;100
+          &uarr;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;&minus;
+       cancellation does most of the work</div>
+
+    <p>A stock price under the random-walk model is the same coin, scaled by &sigma;. The probability cone of where the price might be at time <em>t</em> widens like &radic;t, not <em>t</em>. The cone is a parabola lying on its side.</p>
+
+    <figure>
+      <svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Square-root-of-time envelope of a random walk, with a sample path inside">
+        <defs>
+          <linearGradient id="cone" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#b8862f" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="#b8862f" stop-opacity="0.04"/>
+          </linearGradient>
+        </defs>
+        <!-- envelope: y = 170 +/- 70 * sqrt(x/660) for x in [60, 660] -->
+        <path d="M60,170
+                 Q150,135 260,120
+                 Q400,100 530,85
+                 Q620,75 660,70
+                 L660,270
+                 Q620,265 530,255
+                 Q400,240 260,220
+                 Q150,205 60,170 Z"
+              fill="url(#cone)" stroke="#b8862f" stroke-width="1" stroke-opacity="0.5"/>
+        <!-- center line -->
+        <line x1="60" y1="170" x2="660" y2="170" stroke="#d8d1c2" stroke-width="1" stroke-dasharray="3,4"/>
+        <!-- a sample path (rough random walk) -->
+        <polyline points="60,170 90,164 120,172 150,158 180,166 210,150 240,160 270,142 300,156 330,138 360,148 390,128 420,144 450,118 480,134 510,108 540,128 570,100 600,122 630,94 660,114"
+                  fill="none" stroke="#8a6420" stroke-width="2"/>
+        <!-- baseline -->
+        <line x1="48" y1="290" x2="672" y2="290" stroke="#d8d1c2" stroke-width="1.5"/>
+        <!-- ticks -->
+        <g font-family="'JetBrains Mono',monospace" font-size="12" fill="#888178" text-anchor="middle">
+          <line x1="60"  y1="290" x2="60"  y2="298" stroke="#d8d1c2"/><text x="60"  y="314">t = 0</text>
+          <line x1="210" y1="290" x2="210" y2="298" stroke="#d8d1c2"/><text x="210" y="314">1 week</text>
+          <line x1="360" y1="290" x2="360" y2="298" stroke="#d8d1c2"/><text x="360" y="314">1 month</text>
+          <line x1="510" y1="290" x2="510" y2="298" stroke="#d8d1c2"/><text x="510" y="314">1 quarter</text>
+          <line x1="660" y1="290" x2="660" y2="298" stroke="#d8d1c2"/><text x="660" y="314">1 year</text>
+        </g>
+        <!-- envelope label -->
+        <text x="660" y="60"  text-anchor="end" font-family="Fraunces,serif" font-style="italic" font-size="15" fill="#8a6420">&plusmn; &sigma; &middot; &radic;t  envelope</text>
+        <text x="660" y="135" text-anchor="end" font-family="'JetBrains Mono',monospace" font-size="11" fill="#888178">widens like a parabola, not a line</text>
+      </svg>
+      <figcaption>The price-uncertainty cone widens with &radic;t, not t. A sample path stays inside.</figcaption>
+    </figure>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">Where It Matters</span>Three places this rule shows up</h2>
+
+    <h3>1. Black&ndash;Scholes option pricing</h3>
+    <p>The Black&ndash;Scholes formula prices an option using one volatility input and one time input. They appear together as <code class="k">&sigma; &middot; &radic;T</code> &mdash; the standard deviation of the log price at expiry. A two-month option does not have 2/12 of the variance of an annual one. It has &radic;(2/12) &asymp; 0.41 of the standard deviation. The price scales accordingly. Get the &radic; wrong and your option premiums are off by a factor of three on short expiries.</p>
+
+    <h3>2. Value-at-Risk scaling</h3>
+    <p>Regulators frequently want 10-day VaR but trading desks compute 1-day VaR. The standard convert is to multiply by &radic;10 &asymp; 3.16. If your one-day 99% VaR is $1M, your ten-day VaR under the random-walk assumption is about $3.16M &mdash; not $10M. This is in the Basel rules verbatim. It is also the assumption that quietly fails during crises, when returns autocorrelate and tails fatten.</p>
+
+    <h3>3. Annualizing the Sharpe ratio</h3>
+    <p>Monthly Sharpe is (mean monthly return) / (monthly &sigma;). To turn it into annual Sharpe, you don't multiply numerator and denominator by 12 &mdash; the numerator grows linearly (returns add), the denominator grows by &radic;12 (vols compose by &radic;t). The ratio therefore scales by 12 / &radic;12 = &radic;12.</p>
+
+    <div class="formula">
+      <span class="big">Sharpe<sub>annual</sub> = Sharpe<sub>monthly</sub> &middot; &radic;12</span>
+      <span class="note">For daily Sharpes use &radic;252. This is the same &radic;t rule wearing a different jacket.</span>
+    </div>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">The Limits</span>When the rule breaks</h2>
+    <p>The &radic;t rule sits on top of one assumption: returns are independent and identically distributed with finite variance. Real returns satisfy none of those exactly. The cases where the rule fails are also the cases people care about.</p>
+
+    <h3>Autocorrelation: trend and reversion</h3>
+    <p>Look back at the variance identity: <em>Var(X + Y) = Var(X) + Var(Y) + 2&middot;Cov(X, Y)</em>. When successive returns are positively correlated &mdash; momentum, trend &mdash; the covariance term is positive. Variances add to <strong>more</strong> than N&sigma;&sup2;. Multi-day vol is <em>higher</em> than &sigma;&middot;&radic;N predicts.</p>
+    <p>Mean reversion does the opposite. Negative autocorrelation means today's up move makes tomorrow's down move more likely; they partially cancel. Long-horizon vol grows <em>slower</em> than &radic;N. This is why pairs traders can run more leverage than the daily vol suggests &mdash; their portfolios revert.</p>
+    <p>The variance-ratio test &mdash; Var(R<sub>N</sub>) / (N&middot;Var(r)) &mdash; is the standard diagnostic. A ratio greater than 1 implies trending. Less than 1 implies reversion. Equal to 1 is the random-walk null.</p>
+
+    <h3>Vol clustering: &sigma; itself moves</h3>
+    <p>Mandelbrot, 1963: "large changes tend to be followed by large changes, and small by small." Modern restatement: GARCH. Volatility itself is autocorrelated &mdash; high-vol days cluster, low-vol days cluster. The &radic;t rule treats &sigma; as constant. In a calm regime it overstates next-month risk; in a stressed regime it understates it.</p>
+    <p>The practical fix is to recalibrate frequently &mdash; rolling 30 to 90 days &mdash; rather than relying on an annual figure. The deeper fix is to model &sigma; as a process in its own right, which is what GARCH, stochastic-vol, and implied-vol surfaces do.</p>
+
+    <h3>Fat tails: variance may not even be the right measure</h3>
+    <p>The &radic;t rule scales the second moment. If returns have finite variance, &radic;t is the correct scaling regardless of distribution shape &mdash; the central limit theorem promises that sums of IID returns trend toward Gaussian whatever the parent distribution looks like. The problem is what happens at the tails of those sums on the way there.</p>
+    <p>Real return distributions have fatter tails than Gaussian. A 4&sigma; day, predicted to happen once every thirty thousand trading days, in fact happens every few years. The &radic;t rule scales the typical deviation correctly. It does not scale tail risk correctly. For tail-sensitive applications &mdash; deep-out-of-the-money options, capital reserves, stress tests &mdash; people abandon Gaussian assumptions and use Student-t, EVT, or empirical bootstraps.</p>
+
+    <h3>Microstructure: at the highest frequencies, the rule breaks the other way</h3>
+    <p>Below one second or so, returns are dominated by bid&ndash;ask bounce and order-book noise &mdash; strongly negatively autocorrelated. Realized vol estimated from tick data <em>overstates</em> the integrated variance of the underlying price process. The fix is realized-kernel or two-scale estimators that sample sparsely enough to dodge the microstructure noise. The &radic;t rule still works, but only above the noise horizon.</p>
+
+    <hr class="divider">
+
+    <h2><span class="kicker">Summary</span>One identity, one assumption, a great many uses</h2>
+    <p>Standard deviation is a sample statistic. Volatility is the parameter you use to model the process that generated the sample &mdash; conventionally computed on log returns, conventionally annualized. The two coincide when the sample is well-behaved and you remember to scale.</p>
+
+    <p>The &radic;t rule &mdash; <code class="k">&sigma;<sub>T</sub> = &sigma;<sub>1</sub> &middot; &radic;T</code> &mdash; follows from one identity (variance of an IID sum) and one assumption (independence). It is what makes annual vol comparable to daily vol, what scales option prices across expiries, what scales VaR across regulatory horizons, and what scales Sharpe across reporting frequencies.</p>
+
+    <p>It also fails in three predictable ways: autocorrelation (trend or reversion), vol clustering (&sigma; itself drifts), and fat tails (variance is not the whole story). For ordinary use the rule is good enough. For the days that move markets, you need to know what the rule is leaving out.</p>
+  </article>
+</div>
+
+<footer>
+  <div class="foot-inner">
+    <div class="foot-note">
+      Not investment advice. The &radic;t rule is a modelling convention, not a law of finance. Real return processes deviate from the iid Gaussian assumption in ways that matter most precisely when the stakes are highest. Use it as a starting point, not a stopping point.
+    </div>
+    <div class="foot-credit">
+      <span class="name">Anup Roy</span>
+      <span class="links">
+        <a href="https://github.com/anup00900" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/in/anup0805/" target="_blank" rel="noopener">LinkedIn</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
